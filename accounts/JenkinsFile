@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+    environment {
+        registry = "<>.dkr.ecr.us-east-1.amazonaws.com/accounts"
+    }
+
+    stages {
+        stage('Cloning Git') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/Prem12/cicd-pipeline-project.git']]])
+            }
+        }
+        stage('Build and Test') {
+           steps {
+			    sh 'ls -ltr'
+                sh 'cd accounts && mvn clean package'
+            }
+        }
+        stage('Static Code Analysis') {
+          environment {
+            SONAR_URL = "http://<>:9000"
+          }
+          steps {
+            withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+              sh 'cd accounts && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+            }
+          }
+        }
+        stage('Pushing to ECR') {
+            steps{  
+                script {
+                    sh 'aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/h6a5w0v8'
+					sh 'cd accounts && docker build -t public.ecr.aws/h6a5w0v8/accounts:latest .'
+					sh 'docker push public.ecr.aws/h6a5w0v8/accounts:latest'
+                }
+            }
+        }
+    }
+}
