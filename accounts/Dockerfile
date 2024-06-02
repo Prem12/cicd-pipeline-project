@@ -1,11 +1,6 @@
-#Start with a base image containing Java runtime
 FROM openjdk:17-jdk-slim
+LABEL maintainer="prem4131@gmail.com"
+EXPOSE 8081
+COPY target/accounts-0.0.1-SNAPSHOT.jar accounts.jar
+ENTRYPOINT ["java","-jar","/accounts.jar"]
 
-#Information around who maintains the image
-MAINTAINER prem413
-
-# Add the application's jar to the image
-COPY target/accounts-0.0.1-SNAPSHOT.jar accounts-0.0.1-SNAPSHOT.jar
-
-# execute the application
-ENTRYPOINT ["java", "-jar", "accounts-0.0.1-SNAPSHOT.jar"]
